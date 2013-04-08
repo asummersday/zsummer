@@ -34,39 +34,55 @@
  * (end of COPYRIGHT)
  */
 
-#ifndef ZSUMMER_HEADER_H_
-#define ZSUMMER_HEADER_H_
+#include "IOServer.h"
+#include "Client.h"
 
-#include "../../utility/utility.h"
-#include "../../tools/thread4z/thread.h"
-#include "../../tools/log4z/log4z.h"
-#include "../../network/SocketInterface.h"
-
-#include <iostream>
-#include <queue>
-#include <iomanip>
-#include <string.h>
-#include <signal.h>
-using namespace std;
-
-using namespace zsummer::utility;
-using namespace zsummer::thread4z;
-using namespace zsummer::network;
-
-#define _MSG_BUF_LEN	(5*1024)
-#define _MSG_LEN   (5000)
-struct tagPacket
+CIOServer::CIOServer()
 {
-	unsigned short _head;
-	char		   _body[_MSG_BUF_LEN];
-};
+	m_ios = NULL;
+	m_nTotalRecvLen = 0;
+	m_nTotalSendLen = 0;
+	m_nTotalRecvCount = 0;
+	m_nTotalSendCount = 0;
+}
 
-//服务端状态信息
-extern int g_nTotalLinked;
-extern int g_nTotalCloesed;
-extern int g_nTotalRecvLen;
-extern int g_nTotalSendLen;
+bool CIOServer::Start()
+{
+	m_ios = CreateIOServer();
+	if (!m_ios->Start(this))
+	{
+		LOGE("process start fail!");
+		return false;
+	}
+	return CThread::Start();
+}
 
+void CIOServer::Stop()
+{
+	m_ios->Stop();
+}
 
-#endif
+void CIOServer::Run()
+{
+	m_ios->Run();
+}
+
+void CIOServer::Post(void * pUser)
+{
+	m_ios->Post(pUser);
+}
+
+bool CIOServer::OnStop()
+{
+	return true;
+}
+//来自Schedule的消息
+bool CIOServer::OnMsg(void *pUser)
+{
+	ITcpSocket * s = (ITcpSocket *) pUser;
+	CClient * p = new CClient;
+	s->BindIOServer(m_ios);
+	p->InitSocket(this, s);
+	return true;
+}
 

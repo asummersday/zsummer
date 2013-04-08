@@ -34,51 +34,42 @@
  * (end of COPYRIGHT)
  */
 
-#include "IOServer.h"
-#include "Client.h"
 
-CIOServer::CIOServer()
-{
-	m_ios = NULL;
-}
+//! zsummer的测试服务模块(对应zsummer底层网络封装的上层设计测试服务) 可视为服务端架构中的 gateway服务/agent服务/前端服务, 特点是高并发高吞吐量
+//! Socket Client头文件
 
-bool CIOServer::Start()
-{
-	m_ios = CreateIOServer();
-	if (!m_ios->Start(this))
-	{
-		LOGE("process start fail!");
-		return false;
-	}
-	return CThread::Start();
-}
+#ifndef ZSUMMER_CLIENT_H_
+#define ZSUMMER_CLIENT_H_
+#include "header.h"
 
-void CIOServer::Stop()
-{
-	m_ios->Stop();
-}
+//! 前向声明
+class CIOServer;
 
-void CIOServer::Run()
+//! 上层Socekt Client的二次封装
+class CClient :public ITcpSocketCallback
 {
-	m_ios->Run();
-}
+public:
+	CClient();
+	~CClient();
+	void InitSocket(CIOServer *ios, ITcpSocket *s);
+	virtual bool OnRecv();
+	virtual bool OnConnect(bool bConnected);
+	virtual bool OnSend();
+	virtual bool OnClose();
 
-void CIOServer::Post(void * pUser)
-{
-	m_ios->Post(pUser);
-}
+	CIOServer  * m_ios;
+	ITcpSocket * m_socket;
+	
+	//! 每个消息包分两次分别读取头部和包体
+	unsigned char m_type;
+	//! 读包
+	Packet m_recving;
+	//! 写包队列
+	std::queue<Packet *> m_sendque;
+	//! 当前写包
+	Packet m_sending;
+};
 
-bool CIOServer::OnStop()
-{
-	return true;
-}
-//来自Schedule的消息
-bool CIOServer::OnMsg(void *pUser)
-{
-	ITcpSocket * s = (ITcpSocket *) pUser;
-	CClient * p = new CClient;
-	s->BindIOServer(m_ios);
-	p->SetSocket(s);
-	return true;
-}
+#endif
+
 
