@@ -75,10 +75,14 @@
 
 
 
+#ifdef WIN32
+__declspec(thread) char g_log4zstreambuf[LOG_BUF_SIZE];
+#else
+__thread char g_log4zstreambuf[LOG_BUF_SIZE];
+#endif
 
 _ZSUMMER_BEGIN
 _ZSUMMER_LOG4Z_BEGIN
-
 
 
 static void SleepMillisecond(unsigned int ms);
@@ -561,14 +565,15 @@ public:
 		pLog->_id =id;
 		pLog->_level = level;
 		pLog->_time = time(NULL);
-		if ((int)strlen(log) >= LOG_BUF_SIZE)
+		int len = (int) strlen(log);
+		if (len >= LOG_BUF_SIZE)
 		{
 			memcpy(pLog->_content, log, LOG_BUF_SIZE);
 			pLog->_content[LOG_BUF_SIZE-1] = '\0';
 		}
 		else
 		{
-			memcpy(pLog->_content, log, strlen(log)+1);
+			memcpy(pLog->_content, log, len+1);
 		}
 		CAutoLock l(m_lock);
 		l.Lock();

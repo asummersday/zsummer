@@ -34,30 +34,47 @@
  * (end of COPYRIGHT)
  */
 
-#ifndef ZSUMMER_CLIENT_H_
-#define ZSUMMER_CLIENT_H_
-#include "header.h"
+//! zsummer的测试服务模块(对应zsummer底层网络封装的上层设计测试服务) 可视为服务端架构中的 gateway服务/agent服务/前端服务, 特点是高并发高吞吐量
+//! 公共头文件
 
-class CClient :public ITcpSocketCallback
+#ifndef ZSUMMER_HEADER_H_
+#define ZSUMMER_HEADER_H_
+
+#include "../../utility/utility.h"
+#include "../../tools/thread4z/thread.h"
+#include "../../tools/log4z/log4z.h"
+#include "../../network/SocketInterface.h"
+
+#include <iostream>
+#include <queue>
+#include <iomanip>
+#include <string.h>
+#include <signal.h>
+using namespace std;
+
+using namespace zsummer::utility;
+using namespace zsummer::thread4z;
+using namespace zsummer::network;
+
+//! 消息包缓冲区大小
+#define _MSG_BUF_LEN	(5*1024)
+
+//! 消息长度 应该小于_MSG_BUF_LEN
+#define _MSG_LEN   (5000)
+
+//! 消息包 小头序 union可优雅的减少一次显示强制转换
+union Packet
 {
-public:
-	CClient();
-	~CClient();
-	void SetSocket(ITcpSocket *s);
-	virtual bool OnRecv();
-	virtual bool OnConnect(bool bConnected);
-	virtual bool OnSend();
-	virtual bool OnClose();
-
-	ITcpSocket * m_socket;
-	tagPacket m_recv;
-	unsigned char m_type; //1,2  header, body
-
-	std::queue<tagPacket *> m_sendque;
-	char m_send[_MSG_BUF_LEN];
-	bool m_sending;
+	unsigned short _head;
+	char		   _body[_MSG_BUF_LEN];
 };
 
-#endif
 
+//! 服务端总连入连接数和总关闭连接数
+extern int g_nTotalLinked;
+extern int g_nTotalCloesed; //! 多线程下使用 所有写操作必须为原子操作
+
+
+
+#endif
 

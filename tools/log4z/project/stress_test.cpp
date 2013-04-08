@@ -26,84 +26,72 @@ enum ENUM_LOGGER
 };
 LoggerId g_logger[L_MONITER+1];
 
-//stress attribute
-char g_data[100];
-const int FOR_MAX = 7;
+#define  LOG_CONTENT "char:" <<'c'\
+<< ", unsigned char:" << (unsigned char) 'c'\
+<< ", short:" << (short) -1\
+<< ", unsigned short:" << (unsigned short) -1\
+<< ", int:" << (int) -1\
+<< ", unsigned int:" << (unsigned int) -1\
+<< ", long:" << (long) -1\
+<< ", unsigned long:" << (unsigned long) -1\
+<< ", long long:" << (long long) -1\
+<< ", unsigned long long:" << (unsigned long long) -1\
+<< ", float:" << (float) -1.234567\
+<< ", double:" << (double) -2.34566\
+<< ", std::string:" << std::string("fffff")\
+<< ", void *:" << ( int *) 32423324\
+<< ", const void*:" << (const int *) 32423324\
+<< ", constant:" << 1000 \
+<< ", constant:" << 100.12345678\
+<< ", bool:" << (bool) true;
 
-void MysqlModuleTrace()
+const int SWITCH_NUM = 100;
+
+void MultiThreadFunc()
 {
+	unsigned long long count = 0;
 	while(1)
 	{
-		for (int i=0; i<FOR_MAX; i++)
+		count++;
+		LOG_DEBUG(g_logger[L_MYSQL], LOG_CONTENT);
+		LOG_DEBUG(g_logger[L_NET], LOG_CONTENT);
+		LOG_DEBUG(g_logger[L_MONITER], LOG_CONTENT);
+		if (count%SWITCH_NUM == 0)
 		{
-			LOG_DEBUG(g_logger[L_MYSQL], g_data);
-		}
-		if (rand()%100 < 5)
-		{
-			SleepMillisecond(5);
+			SleepMillisecond(10);
 		}
 	}
 }
-//virtual the Network module in a project.
-void NetworkModuleTrace()
-{
-	while(1)
-	{
-		for (int i=0; i<FOR_MAX; i++)
-		{
-			LOG_DEBUG(g_logger[L_NET], g_data);
-		}
-		if (rand()%100 < 5)
-		{
-			SleepMillisecond(5);
-		}
-	}
-}
-//virtual the Moniter module in a project.
-void MoniterModuleTrace()
-{
-	while(1)
-	{
-		for (int i=0; i<FOR_MAX; i++)
-		{
-			LOG_DEBUG(g_logger[L_MONITER], g_data);
-		}
-		if (rand()%100 < 5)
-		{
-			SleepMillisecond(5);
-		}
-	}
-}
-//////////////////////////////////////////////////////////////////////////
+
 
 int main(int argc, char *argv[])
 {
-	memset(g_data, '-', sizeof(g_data));
-	g_data[sizeof(g_data)-1] = '\0';
+
 	//add and configure logger
 	ILog4zManager::GetInstance()->ConfigMainLogger("", "L_MAIN");
 	g_logger[L_MAIN] = ILog4zManager::GetInstance()->GetMainLogger();
+	g_logger[L_MYSQL] = ILog4zManager::GetInstance()->DynamicCreateLogger("", "L_MYSQL" );
+	g_logger[L_NET] = ILog4zManager::GetInstance()->DynamicCreateLogger("", "L_NET" );
+	g_logger[L_MONITER] = ILog4zManager::GetInstance()->DynamicCreateLogger("", "L_MONITER" );
 
-	g_logger[L_MYSQL] = ILog4zManager::GetInstance()->DynamicCreateLogger("", "L_MYSQL");
-	g_logger[L_NET] = ILog4zManager::GetInstance()->DynamicCreateLogger("", "L_NET");
-	g_logger[L_MONITER] = ILog4zManager::GetInstance()->DynamicCreateLogger("", "L_MONITER");
-
+	//not display
 	ILog4zManager::GetInstance()->ChangeLoggerDisplay(g_logger[L_MYSQL], false);
 	ILog4zManager::GetInstance()->ChangeLoggerDisplay(g_logger[L_NET], false);
 	ILog4zManager::GetInstance()->ChangeLoggerDisplay(g_logger[L_MONITER], false);
 
+	//start
 	ILog4zManager::GetInstance()->Start();
 
 	//create thread
-	CreateThread(&MysqlModuleTrace);
-	CreateThread(&NetworkModuleTrace);
-	CreateThread(&MoniterModuleTrace);
-
+	CreateThread(&MultiThreadFunc);
+	CreateThread(&MultiThreadFunc);
+	CreateThread(&MultiThreadFunc);
 
 	unsigned long long lastCount = 0;
 	unsigned long long lastData = 0;
 	while(1)
 	{ 
+		//stats
 		unsigned long long speedCount = ILog4zManager::GetInstance()->GetStatusTotalWriteCount() - lastCount;
 		lastCount += speedCount;
 		unsigned long long speedData = ILog4zManager::GetInstance()->GetStatusTotalWriteBytes() - lastData;
