@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
 	signal( SIGCHLD, SIG_IGN);
 #endif
 	//! 启动日志服务
+	ILog4zManager::GetInstance()->Config("config.cfg");
 	ILog4zManager::GetInstance()->Start();
 //ILog4zManager::GetInstance()->ChangeLoggerDisplay(ILog4zManager::GetInstance()->GetMainLogger(), false);
 //ILog4zManager::GetInstance()->ChangeLoggerLevel(ILog4zManager::GetInstance()->GetMainLogger(), LOG_LEVEL_INFO);
@@ -89,8 +90,7 @@ int main(int argc, char* argv[])
 			temp3 += (*iter)->GetTotalRecvCount();
 			temp4 += (*iter)->GetTotalSendCount();
 		}
-		LOGI(fixed << std::setprecision(2) 
-			<< "TotalLinked:" << g_nTotalLinked 
+		LOGI("TotalLinked:" << g_nTotalLinked 
 			<<",  TotalClosed:" << g_nTotalCloesed
 			<< " \n\t"
 
